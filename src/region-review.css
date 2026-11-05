@@ -1,0 +1,76 @@
+.region-review {
+  padding: 20px 0;
+  border-bottom: 1px solid #e0e5dd;
+}
+.region-review .section-heading .link-btn {
+  margin-left: auto;
+}
+.region-crop {
+  background: #f5f6f1;
+  border: 1px solid #dbe1d7;
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+}
+.region-crop img {
+  max-width: 100%;
+  max-height: 145px;
+  vertical-align: middle;
+  object-fit: contain;
+}
+.region-kicker {
+  font-size: 12px;
+  color: #5b6c61;
+  margin-top: 12px;
+}
+.region-text {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.region-note,
+.region-verdict {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 6px 0;
+  color: #546559;
+}
+.region-review form {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+}
+.region-review label {
+  font-size: 12px;
+}
+.region-review textarea {
+  font: inherit;
+  font-size: 14px;
+  color: inherit;
+  padding: 8px;
+  border: 1px solid #bdc9bd;
+  border-radius: 6px;
+  resize: vertical;
+  min-height: 42px;
+}
+.region-review form button {
+  justify-self: start;
+}
+.region-verdict {
+  background: #edf4e9;
+  color: #234630;
+  border-radius: 6px;
+  padding: 9px 10px;
+}
+.region-verdict[data-region-verdict="shortened"] {
+  background: #fff2df;
+  color: #75491a;
+}
+.panel-bar {
+  flex-wrap: wrap;
+}
+.bar-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+}

@@ -1,9 +1,11 @@
 import { useRef, useState, type DragEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { Icon } from "./Icon";
-import { compareText, hasTrailingEllipsis } from "./review";
+import { compareText, hasTrailingEllipsis, matchedCandidate } from "./review";
 import { useScan, type Language } from "./useScan";
 import { Screenshot } from "./Screenshot";
+import { useRegionScan } from "./useRegionScan";
+import { RegionReview } from "./RegionReview";
 import "./style.css";
 
 const examples = [
@@ -33,6 +35,7 @@ const assets = import.meta.env.BASE_URL;
 
 function Inspector() {
   const scan = useScan();
+  const area = useRegionScan();
   const [language, setLanguage] = useState<Language>("deu");
   const [dragging, setDragging] = useState(false);
   const dragDepth = useRef(0);
@@ -43,17 +46,24 @@ function Inspector() {
     Record<number, { value: string; outcome: ReturnType<typeof compareText> }>
   >({});
   const input = useRef<HTMLInputElement>(null);
-  const candidates = scan.lines
+  const allCandidates = scan.lines
     .map((line, i) => ({ line, i }))
     .filter(
       ({ line, i }) =>
         hasTrailingEllipsis(line.text) && judgments[i]?.outcome !== "complete",
     );
-  const matching = Object.values(judgments).filter(
-    (j) => j.outcome === "complete",
-  ).length;
+  const resolvedLine =
+    area.verdict === "complete" && area.region && area.result
+      ? matchedCandidate(allCandidates, area.region, area.result.lines)
+      : null;
+  const candidates = allCandidates.filter(({ i }) => i !== resolvedLine);
+  const matching =
+    allCandidates.length -
+    candidates.length +
+    Object.values(judgments).filter((j) => j.outcome === "complete").length;
 
   function clearReview() {
+    area.clear();
     select(null);
     setExpected("");
     setJudgments({});
@@ -162,6 +172,23 @@ function Inspector() {
                 Screenshot
               </strong>
               <div className="bar-actions">
+                {!working && scan.picture && (
+                  <button
+                    type="button"
+                    className="small-button"
+                    data-region-select
+                    aria-pressed={area.phase === "selecting"}
+                    onClick={() => {
+                      if (area.phase === "selecting") area.clear();
+                      else area.begin();
+                    }}
+                  >
+                    <Icon name="brackets" size={15} />
+                    {area.phase === "selecting"
+                      ? "Cancel selection"
+                      : "Select area"}
+                  </button>
+                )}
                 {scan.phase !== "idle" && (
                   <button
                     className="link-btn"
@@ -185,6 +212,13 @@ function Inspector() {
             {scan.picture ? (
               <Screenshot
                 picture={scan.picture}
+                selecting={area.phase === "selecting"}
+                region={area.region}
+                onRegion={(region) => {
+                  if (scan.picture)
+                    void area.read(scan.picture, language, region);
+                }}
+                onCancelSelect={area.clear}
                 candidates={candidates}
                 selected={selected}
                 onSelect={chooseLine}
@@ -243,6 +277,13 @@ function Inspector() {
                 <option value="deu">German</option>
               </select>
             </section>
+            <RegionReview
+              scan={area}
+              retry={() => {
+                if (scan.picture && area.region)
+                  void area.read(scan.picture, language, area.region);
+              }}
+            />
             <section
               className="analysis"
               data-status={scan.phase}
@@ -297,7 +338,7 @@ function Inspector() {
                         ? "Review the highlighted text."
                         : matching
                           ? "The punctuation matches your expected text."
-                          : "No visible trailing ellipsis found."}
+                          : "Full-image scan found no trailing ellipsis. Select an area to check a label more closely."}
                   </p>
                 )}
               </div>
