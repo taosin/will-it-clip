@@ -31,3 +31,28 @@ test("the expected copy distinguishes intentional punctuation from a missing suf
     "unknown",
   );
 });
+
+test("a region match cannot clear a different label in the same area", async () => {
+  const { matchedCandidate } = await import("../src/review.ts");
+  const rect = { x: 0, y: 0, width: 120, height: 70 };
+  const first = {
+    text: "Loading...",
+    confidence: 93,
+    bbox: { x0: 5, y0: 5, x1: 75, y1: 20 },
+  };
+  const second = { ...first, bbox: { x0: 5, y0: 40, x1: 75, y1: 55 } };
+  const tied = [{ i: 7, line: first }];
+  assert.equal(
+    matchedCandidate(tied, rect, [{ ...first, text: "Loading…" }]),
+    7,
+  );
+  assert.equal(matchedCandidate(tied, rect, [second]), null);
+  assert.equal(
+    matchedCandidate(tied, rect, [{ ...first, text: "Finished" }]),
+    null,
+  );
+  assert.equal(
+    matchedCandidate([...tied, { i: 8, line: second }], rect, [first]),
+    null,
+  );
+});
