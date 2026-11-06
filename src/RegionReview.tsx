@@ -26,7 +26,11 @@ export function RegionReview({
       <header className="section-heading">
         <Icon name="brackets" size={17} />
         <h2>Selected area</h2>
-        <button type="button" className="link-btn" onClick={scan.clear}>
+        <button
+          type="button"
+          className="link-btn"
+          onClick={scan.phase === "reading" ? scan.cancel : scan.clear}
+        >
           {scan.phase === "reading" || scan.phase === "selecting"
             ? "Cancel"
             : "Dismiss"}
@@ -43,9 +47,13 @@ export function RegionReview({
           Reading the selected area…
         </p>
       )}
-      {scan.phase === "error" && (
+      {(scan.phase === "error" || scan.phase === "cancelled") && (
         <div role="alert">
-          <p className="error">{scan.error}</p>
+          <p className="error">
+            {scan.phase === "cancelled"
+              ? "Area scan cancelled. Retry when ready."
+              : scan.error}
+          </p>
           <button className="small-button" onClick={retry}>
             Retry area
           </button>

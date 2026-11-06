@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef } from "react";
+import { SessionMemory, useImageState } from "./SessionState";
 import { cropForRecognition, type Region } from "./region";
 import type { createScan, ScanLine } from "./ocr";
 import type { Picture, Language } from "./useScan";
@@ -11,21 +12,26 @@ type Result = {
   lines: ScanLine[];
   reliable: boolean;
 };
-type Phase = "idle" | "selecting" | "reading" | "complete" | "error";
+type Phase =
+  "idle" | "selecting" | "cancelled" | "reading" | "complete" | "error";
 
 export function useRegionScan() {
-  const [decision, setDecision] = useState<HumanDecision>("Unreviewed");
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [region, setRegion] = useState<Region | null>(null);
-  const [result, setResult] = useState<Result | null>(null);
-  const [error, setError] = useState("");
-  const [expected, editExpected] = useState("");
-  const [verdict, setVerdict] = useState<ReturnType<typeof compareText> | null>(
-    null,
+  const memory = useContext(SessionMemory)!;
+  const [decision, setDecision] = useImageState<HumanDecision>(
+    "area-decision",
+    "Unreviewed",
   );
+  const [phase, setPhase] = useImageState<Phase>("area-phase", "idle");
+  const [region, setRegion] = useImageState<Region | null>("area-region", null);
+  const [result, setResult] = useImageState<Result | null>("area-result", null);
+  const [error, setError] = useImageState("area-error", "");
+  const [expected, editExpected] = useImageState("area-expected", "");
+  const [verdict, setVerdict] = useImageState<ReturnType<
+    typeof compareText
+  > | null>("area-verdict", null);
   const generation = useRef(0);
   const worker = useRef<ReturnType<typeof createScan> | null>(null);
-  const objectUrl = useRef("");
+  const objectUrl = useRef(result?.preview ?? "");
 
   function dispose() {
     generation.current++;
@@ -34,7 +40,14 @@ export function useRegionScan() {
     if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
     objectUrl.current = "";
   }
-  useEffect(() => dispose, []);
+  useEffect(
+    () => () => {
+      generation.current++;
+      worker.current?.cancel();
+      if (memory.get("area-phase") === "reading") setPhase("cancelled");
+    },
+    [],
+  );
   function clear() {
     dispose();
     setRegion(null);
@@ -44,6 +57,12 @@ export function useRegionScan() {
     setDecision("Unreviewed");
     setVerdict(null);
     setError("");
+  }
+  function cancel() {
+    generation.current++;
+    worker.current?.cancel();
+    worker.current = null;
+    setPhase("cancelled");
   }
   function begin() {
     clear();
@@ -132,6 +151,7 @@ export function useRegionScan() {
     expected,
     verdict,
     clear,
+    cancel,
     begin,
     read,
     setExpected,
