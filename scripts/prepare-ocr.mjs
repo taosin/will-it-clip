@@ -61,7 +61,9 @@ for (const lang of ["eng", "deu"]) {
     package: `${manifest.name}@${manifest.version}`,
     bytes: bytes.length,
     sha256: createHash("sha256").update(bytes).digest("hex"),
-    license: manifest.license,
+    packageLicense: manifest.license,
+    modelLicense: "Apache-2.0",
+    modelSource: "https://github.com/naptha/tessdata",
   });
 }
 await writeFile(join(destination, "NOTICE.txt"), credits.join("\n") + "\n");
