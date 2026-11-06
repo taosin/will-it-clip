@@ -1,0 +1,73 @@
+.review-export {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  min-width: 0;
+}
+.review-export fieldset {
+  margin: 0;
+  border: 1px solid #cbd4c9;
+  padding: 10px;
+  border-radius: 7px;
+  min-width: 0;
+}
+.review-export legend {
+  font-size: 13px;
+  font-weight: 650;
+}
+.review-export .muted {
+  font-size: 12px;
+}
+.decision-options {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.decision-options label,
+.export-full {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 13px;
+}
+.review-export input {
+  flex: none;
+  accent-color: #1b4435;
+}
+.review-export .export-preview img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #cbd4c9;
+  margin-bottom: 10px;
+}
+.review-export a {
+  color: inherit;
+  text-decoration: none;
+}
+textarea:focus-visible {
+  outline: 3px solid #579874;
+  outline-offset: 3px;
+}
+.review-export input[type="radio"],
+.review-export input[type="checkbox"] {
+  width: auto;
+  padding: 0;
+  margin: 3px 0 0;
+}
+.finding .review-export {
+  margin: 0 12px 13px;
+}
+.region-review > label textarea {
+  display: block;
+  width: 100%;
+  margin-top: 7px;
+}
+
+.finding.resolved {
+  border-color: #b8cdb9;
+  background: #f5faf3;
+}
+.finding.resolved .finding-pick small {
+  color: #396648;
+}

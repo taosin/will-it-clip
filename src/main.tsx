@@ -6,6 +6,8 @@ import { useScan, type Language } from "./useScan";
 import { Screenshot } from "./Screenshot";
 import { useRegionScan } from "./useRegionScan";
 import { RegionReview } from "./RegionReview";
+import { ReviewExport } from "./ReviewExport";
+import type { HumanDecision } from "./annotation";
 import "./style.css";
 
 const examples = [
@@ -41,31 +43,51 @@ function Inspector() {
   const dragDepth = useRef(0);
   const [notice, setNotice] = useState("");
   const [selected, select] = useState<number | null>(null);
-  const [expected, setExpected] = useState("");
+  const [expectedByLine, setExpectedByLine] = useState<Record<number, string>>(
+    {},
+  );
+  const [decisions, setDecisions] = useState<Record<number, HumanDecision>>({});
+  const expected = selected === null ? "" : (expectedByLine[selected] ?? "");
+  function setExpected(value: string) {
+    if (selected === null) return;
+    setExpectedByLine((previous) => ({ ...previous, [selected]: value }));
+    setDecisions((previous) => ({ ...previous, [selected]: "Unreviewed" }));
+    setJudgments((previous) => {
+      const next = { ...previous };
+      delete next[selected];
+      return next;
+    });
+  }
   const [judgments, setJudgments] = useState<
     Record<number, { value: string; outcome: ReturnType<typeof compareText> }>
   >({});
   const input = useRef<HTMLInputElement>(null);
-  const allCandidates = scan.lines
+  const candidates = scan.lines
     .map((line, i) => ({ line, i }))
-    .filter(
-      ({ line, i }) =>
-        hasTrailingEllipsis(line.text) && judgments[i]?.outcome !== "complete",
-    );
-  const resolvedLine =
+    .filter(({ line }) => hasTrailingEllipsis(line.text));
+  const resolved = new Set(
+    candidates
+      .filter(
+        ({ i, line }) =>
+          line.confidence >= 80 &&
+          judgments[i]?.outcome === "complete" &&
+          judgments[i].value === expectedByLine[i],
+      )
+      .map(({ i }) => i),
+  );
+  const resolvedArea =
     area.verdict === "complete" && area.region && area.result
-      ? matchedCandidate(allCandidates, area.region, area.result.lines)
+      ? matchedCandidate(candidates, area.region, area.result.lines)
       : null;
-  const candidates = allCandidates.filter(({ i }) => i !== resolvedLine);
-  const matching =
-    allCandidates.length -
-    candidates.length +
-    Object.values(judgments).filter((j) => j.outcome === "complete").length;
+  if (resolvedArea !== null) resolved.add(resolvedArea);
+  const activeCandidates = candidates.filter(({ i }) => !resolved.has(i));
+  const matching = resolved.size;
 
   function clearReview() {
     area.clear();
     select(null);
-    setExpected("");
+    setExpectedByLine({});
+    setDecisions({});
     setJudgments({});
     setNotice("");
   }
@@ -96,19 +118,17 @@ function Inspector() {
   }
   function chooseLine(i: number) {
     select(i);
-    setExpected(judgments[i]?.value ?? "");
   }
   function compare(i: number) {
     if (!expected.trim()) return;
-    const outcome = compareText(scan.lines[i].text, expected);
+    const outcome =
+      scan.lines[i].confidence >= 80
+        ? compareText(scan.lines[i].text, expected)
+        : "unknown";
     setJudgments((previous) => ({
       ...previous,
       [i]: { value: expected, outcome },
     }));
-    if (outcome === "complete") {
-      select(null);
-      setExpected("");
-    }
   }
   const result = scan.phase === "complete";
   const working = scan.phase === "reading";
@@ -219,7 +239,7 @@ function Inspector() {
                     void area.read(scan.picture, language, region);
                 }}
                 onCancelSelect={area.clear}
-                candidates={candidates}
+                candidates={activeCandidates}
                 selected={selected}
                 onSelect={chooseLine}
               />
@@ -279,6 +299,8 @@ function Inspector() {
             </section>
             <RegionReview
               scan={area}
+              picture={scan.picture}
+              language={language}
               retry={() => {
                 if (scan.picture && area.region)
                   void area.read(scan.picture, language, area.region);
@@ -292,7 +314,9 @@ function Inspector() {
               <div className="section-heading">
                 <Icon name="scan" size={18} />
                 <h2>Inspection</h2>
-                {result && <span className="counter">{candidates.length}</span>}
+                {result && (
+                  <span className="counter">{activeCandidates.length}</span>
+                )}
               </div>
               <div role="status" aria-live="polite">
                 {scan.phase === "idle" && (
@@ -329,12 +353,14 @@ function Inspector() {
                 {result && (
                   <p
                     className={
-                      candidates.length ? "result-caption" : "success-note"
+                      activeCandidates.length
+                        ? "result-caption"
+                        : "success-note"
                     }
                   >
                     {!scan.lines.length
                       ? "No readable text found. Try a clearer screenshot."
-                      : candidates.length
+                      : activeCandidates.length
                         ? "Review the highlighted text."
                         : matching
                           ? "The punctuation matches your expected text."
@@ -345,7 +371,12 @@ function Inspector() {
               {candidates.map(({ i, line }) => (
                 <div
                   key={i}
-                  className={"finding " + (selected === i ? "active" : "")}
+                  className={
+                    "finding " +
+                    (selected === i ? "active " : "") +
+                    (resolved.has(i) ? "resolved" : "")
+                  }
+                  data-machine-resolved={resolved.has(i)}
                   data-candidate
                 >
                   <button
@@ -354,46 +385,98 @@ function Inspector() {
                     aria-expanded={selected === i}
                   >
                     <small>
-                      {line.confidence < 80
-                        ? "Low OCR confidence"
-                        : "Possible clipping"}
+                      {resolved.has(i)
+                        ? "Text matches full label"
+                        : line.confidence < 80
+                          ? "Low OCR confidence"
+                          : "Possible clipping"}
                     </small>
                     <span>{line.text}</span>
                   </button>
                   {selected === i && (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        compare(i);
-                      }}
-                    >
-                      <label htmlFor={"ref-" + i}>
-                        Expected text in this language
-                      </label>
-                      <input
-                        id={"ref-" + i}
-                        data-expected
-                        value={expected}
-                        onChange={(e) => setExpected(e.target.value)}
-                        placeholder="Enter the full label"
-                      />
-                      <button
-                        type="submit"
-                        className="small-button"
-                        data-compare
-                        disabled={!expected.trim()}
+                    <>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          compare(i);
+                        }}
                       >
-                        Compare text
-                      </button>
-                      {judgments[i]?.value === expected && (
-                        <p className="comparison" role="status">
-                          {judgments[i].outcome === "shortened" &&
-                          line.confidence >= 80
-                            ? "The visible prefix matches. Check the missing ending in the screenshot."
-                            : "Unable to verify the full label. Review the image."}
-                        </p>
+                        <label htmlFor={"ref-" + i}>
+                          Expected text in this language
+                        </label>
+                        <input
+                          id={"ref-" + i}
+                          data-expected
+                          value={expected}
+                          onChange={(e) => setExpected(e.target.value)}
+                          placeholder="Enter the full label"
+                        />
+                        <button
+                          type="submit"
+                          className="small-button"
+                          data-compare
+                          disabled={!expected.trim()}
+                        >
+                          Compare text
+                        </button>
+                        {judgments[i]?.value === expected && (
+                          <p className="comparison" role="status">
+                            {judgments[i].outcome === "complete"
+                              ? "The visible text matches the expected text."
+                              : judgments[i].outcome === "shortened" &&
+                                  line.confidence >= 80
+                                ? "The visible prefix matches. Check the missing ending in the screenshot."
+                                : "Unable to verify the full label. Review the image."}
+                          </p>
+                        )}
+                      </form>
+                      {scan.picture && (
+                        <ReviewExport
+                          key={JSON.stringify([
+                            scan.picture.url,
+                            language,
+                            i,
+                            expected,
+                          ])}
+                          picture={scan.picture}
+                          region={{
+                            x: line.bbox.x0,
+                            y: line.bbox.y0,
+                            width: line.bbox.x1 - line.bbox.x0,
+                            height: line.bbox.y1 - line.bbox.y0,
+                          }}
+                          decision={decisions[i] ?? "Unreviewed"}
+                          onDecision={(value) =>
+                            setDecisions((previous) => ({
+                              ...previous,
+                              [i]: value,
+                            }))
+                          }
+                          recognized={line.text}
+                          expected={
+                            resolvedArea === i &&
+                            judgments[i]?.outcome !== "complete"
+                              ? area.expected
+                              : expected
+                          }
+                          machine={
+                            resolved.has(i)
+                              ? "Text matches full label." +
+                                (resolvedArea === i
+                                  ? " Verified by matching selected-area OCR."
+                                  : "")
+                              : (line.confidence < 80
+                                  ? "Low OCR confidence; trailing ellipsis detected."
+                                  : "Trailing ellipsis detected; possible clipping.") +
+                                (judgments[i]?.value === expected
+                                  ? " Text comparison: " +
+                                    judgments[i].outcome +
+                                    "."
+                                  : "")
+                          }
+                        />
                       )}
-                    </form>
+                    </>
                   )}
                 </div>
               ))}

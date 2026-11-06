@@ -1,3 +1,5 @@
+import { ReviewExport } from "./ReviewExport";
+import type { Picture } from "./useScan";
 import { Icon } from "./Icon";
 import { hasTrailingEllipsis } from "./review";
 import type { useRegionScan } from "./useRegionScan";
@@ -6,9 +8,13 @@ import "./region-review.css";
 export function RegionReview({
   scan,
   retry,
+  picture,
+  language,
 }: {
   scan: ReturnType<typeof useRegionScan>;
   retry: () => void;
+  picture: Picture | null;
+  language: string;
 }) {
   if (scan.phase === "idle") return null;
   return (
@@ -69,33 +75,31 @@ export function RegionReview({
                 </p>
               )
             ))}
-          {scan.result.text && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                scan.compare();
-              }}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              scan.compare();
+            }}
+          >
+            <label htmlFor="region-expected">
+              Expected text in this language
+            </label>
+            <textarea
+              id="region-expected"
+              rows={2}
+              data-region-expected
+              value={scan.expected}
+              onChange={(e) => scan.setExpected(e.target.value)}
+              placeholder="Paste the full label"
+            />
+            <button
+              className="small-button"
+              data-region-compare
+              disabled={!scan.expected.trim()}
             >
-              <label htmlFor="region-expected">
-                Expected text in this language
-              </label>
-              <textarea
-                id="region-expected"
-                rows={2}
-                data-region-expected
-                value={scan.expected}
-                onChange={(e) => scan.setExpected(e.target.value)}
-                placeholder="Paste the full label"
-              />
-              <button
-                className="small-button"
-                data-region-compare
-                disabled={!scan.expected.trim()}
-              >
-                Compare text
-              </button>
-            </form>
-          )}
+              Compare text
+            </button>
+          </form>
           {scan.verdict && (
             <p
               className="region-verdict"
@@ -111,6 +115,45 @@ export function RegionReview({
           )}
         </>
       )}
+      {scan.phase === "error" && (
+        <label className="region-kicker" htmlFor="region-expected-error">
+          Expected text in this language
+          <textarea
+            id="region-expected-error"
+            rows={2}
+            value={scan.expected}
+            onChange={(e) => scan.setExpected(e.target.value)}
+          />
+        </label>
+      )}
+      {(scan.phase === "complete" || scan.phase === "error") &&
+        picture &&
+        scan.region && (
+          <ReviewExport
+            key={JSON.stringify([
+              picture.url,
+              language,
+              scan.region,
+              scan.expected,
+            ])}
+            picture={picture}
+            region={scan.region}
+            decision={scan.decision}
+            onDecision={scan.setDecision}
+            recognized={scan.result?.text ?? ""}
+            expected={scan.expected}
+            machine={
+              scan.phase === "error"
+                ? "Area OCR failed; manual visual review only."
+                : (scan.result?.reliable
+                    ? "Area OCR reading; clipping requires visual review."
+                    : "Uncertain area OCR reading.") +
+                  (scan.verdict
+                    ? " Text comparison: " + scan.verdict + "."
+                    : "")
+            }
+          />
+        )}
     </section>
   );
 }
