@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { cropForRecognition, type Region } from "./region";
 import type { createScan, ScanLine } from "./ocr";
 import type { Picture, Language } from "./useScan";
+import type { HumanDecision } from "./annotation";
 import { compareText } from "./review";
 
 type Result = {
@@ -13,6 +14,7 @@ type Result = {
 type Phase = "idle" | "selecting" | "reading" | "complete" | "error";
 
 export function useRegionScan() {
+  const [decision, setDecision] = useState<HumanDecision>("Unreviewed");
   const [phase, setPhase] = useState<Phase>("idle");
   const [region, setRegion] = useState<Region | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -39,6 +41,7 @@ export function useRegionScan() {
     setPhase("idle");
     setResult(null);
     editExpected("");
+    setDecision("Unreviewed");
     setVerdict(null);
     setError("");
   }
@@ -110,6 +113,7 @@ export function useRegionScan() {
   }
   function setExpected(value: string) {
     editExpected(value);
+    setDecision("Unreviewed");
     setVerdict(null);
   }
   function compare() {
@@ -120,6 +124,8 @@ export function useRegionScan() {
   }
   return {
     phase,
+    decision,
+    setDecision,
     region,
     result,
     error,
