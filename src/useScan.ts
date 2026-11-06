@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef } from "react";
+import { SessionMemory, useImageState } from "./SessionState";
 import { pngDimensions } from "./input";
 import type { createScan, ScanLine } from "./ocr";
 
@@ -11,40 +12,57 @@ export type Picture = {
   width: number;
   height: number;
 };
-type Phase = "idle" | "reading" | "complete" | "error";
+type Phase = "idle" | "ready" | "cancelled" | "reading" | "complete" | "error";
 
 export function useScan() {
+  const memory = useContext(SessionMemory)!;
   const generation = useRef(0);
   const active = useRef<ReturnType<typeof createScan> | null>(null);
-  const imageUrl = useRef("");
-  const [picture, setPicture] = useState<Picture | null>(null);
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [error, setError] = useState("");
-  const [progress, setProgress] = useState(0);
-  const [lines, setLines] = useState<ScanLine[]>([]);
-  const [last, setLast] = useState<Source | null>(null);
+  const [picture, setPicture] = useImageState<Picture | null>(
+    "scan-picture",
+    null,
+  );
+  const [phase, setPhase] = useImageState<Phase>("scan-phase", "idle");
+  const [error, setError] = useImageState("scan-error", "");
+  const [progress, setProgress] = useImageState("scan-progress", 0);
+  const [lines, setLines] = useImageState<ScanLine[]>("scan-lines", []);
+  const [last, setLast] = useImageState<Source | null>("scan-last", null);
 
-  function dispose() {
+  const imageUrl = useRef(picture?.url ?? "");
+
+  useEffect(
+    () => () => {
+      generation.current++;
+      active.current?.cancel();
+      if (memory.get("scan-phase") === "reading") setPhase("cancelled");
+    },
+    [],
+  );
+
+  function cancel() {
     generation.current++;
     active.current?.cancel();
     active.current = null;
-    if (imageUrl.current) URL.revokeObjectURL(imageUrl.current);
-    imageUrl.current = "";
+    setPhase("cancelled");
   }
-  useEffect(() => dispose, []);
 
-  function reset() {
-    dispose();
-    setPhase("idle");
-    setPicture(null);
+  function invalidate() {
+    generation.current++;
+    active.current?.cancel();
+    active.current = null;
+    setPhase(picture ? "ready" : "idle");
     setLines([]);
-    setLast(null);
     setError("");
     setProgress(0);
   }
 
   async function run(source: Source, language: Language) {
-    reset();
+    generation.current++;
+    active.current?.cancel();
+    active.current = null;
+    setLines([]);
+    setError("");
+    setProgress(0);
     const id = generation.current;
     const current = () => generation.current === id;
     setPhase("reading");
@@ -59,21 +77,33 @@ export function useScan() {
           throw new Error("Could not open this example. Try again.");
         file = await response.blob();
       }
-      const dims = await pngDimensions(file);
-      if (!current()) return;
-      const url = URL.createObjectURL(file);
-      imageUrl.current = url;
-      const image = new Image();
-      image.src = url;
-      await image.decode();
-      if (!current()) return;
-      if (
-        image.naturalWidth !== dims.width ||
-        image.naturalHeight !== dims.height
-      ) {
-        throw new Error("The PNG dimensions could not be verified.");
+      if (!picture || source !== last) {
+        const dims = await pngDimensions(file);
+        if (!current()) return;
+        const url = URL.createObjectURL(file);
+        const image = new Image();
+        try {
+          image.src = url;
+          await image.decode();
+          if (!current()) {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          if (
+            image.naturalWidth !== dims.width ||
+            image.naturalHeight !== dims.height
+          )
+            throw new Error("The PNG dimensions could not be verified.");
+          if (imageUrl.current) URL.revokeObjectURL(imageUrl.current);
+          imageUrl.current = url;
+          setPicture({ url, name: source.name, ...dims });
+        } catch (error) {
+          URL.revokeObjectURL(url);
+          throw error;
+        } finally {
+          image.src = "";
+        }
       }
-      setPicture({ url, name: source.name, ...dims });
       const { createScan } = await import("./ocr");
       if (!current()) return;
       task = createScan(language, (value) => {
@@ -98,5 +128,15 @@ export function useScan() {
       if (active.current === task) active.current = null;
     }
   }
-  return { picture, phase, error, progress, lines, last, reset, run };
+  return {
+    picture,
+    phase,
+    error,
+    progress,
+    lines,
+    last,
+    run,
+    cancel,
+    invalidate,
+  };
 }

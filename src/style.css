@@ -526,3 +526,118 @@ p {
     font-size: 20px;
   }
 }
+.session-panel {
+  margin-bottom: 22px;
+  padding: 18px;
+  border: 1px solid #d9dfd7;
+  background: #fff;
+  border-radius: 14px;
+}
+.session-heading,
+.session-reference {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.session-heading {
+  justify-content: space-between;
+}
+.session-counts {
+  font-size: 13px;
+  margin-top: 10px;
+}
+.session-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.session-item {
+  display: flex;
+  border: 1px solid #d9dfd7;
+  border-radius: 8px;
+  padding: 6px;
+  min-width: 0;
+}
+.session-pick {
+  text-align: left;
+  border: 0;
+  background: transparent;
+  border-radius: 5px;
+  padding: 7px;
+  flex: 1;
+  min-width: 0;
+}
+.session-pick[aria-pressed="true"] {
+  background: #e6f1e8;
+}
+.session-pick strong,
+.session-pick small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.session-pick small {
+  font-size: 11px;
+  color: #476256;
+}
+.session-reference {
+  font-size: 12px;
+  color: #476256;
+}
+.comparison-images {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+}
+.comparison-images .stage {
+  padding: 15px;
+}
+.reference-image {
+  margin: 15px;
+  min-width: 0;
+}
+.reference-image img {
+  width: 100%;
+  height: auto;
+  max-height: 580px;
+  object-fit: contain;
+}
+.reference-image figcaption {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.intro .muted {
+  font-size: 13px;
+  max-width: 850px;
+  margin-top: 10px;
+}
+.settings .muted {
+  font-size: 12px;
+  margin-top: 8px;
+}
+@media (max-width: 650px) {
+  .session-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .session-panel {
+    padding: 12px;
+  }
+  .panel-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .bar-actions {
+    flex-wrap: wrap;
+  }
+  .comparison-images {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.settings.scan-option {
+  display: block;
+}
+.settings.scan-option .small-button {
+  white-space: normal;
+}

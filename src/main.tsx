@@ -1,5 +1,7 @@
-import { useRef, useState, type DragEvent } from "react";
+import { useEffect, useContext, useRef, useState, type DragEvent } from "react";
 import { createRoot } from "react-dom/client";
+import { ImageSession, type SessionControls } from "./ImageSession";
+import { useImageState, SessionMemory } from "./SessionState";
 import { Icon } from "./Icon";
 import { compareText, hasTrailingEllipsis, matchedCandidate } from "./review";
 import { useScan, type Language } from "./useScan";
@@ -35,18 +37,21 @@ const examples = [
 ] as const;
 const assets = import.meta.env.BASE_URL;
 
-function Inspector() {
+function Inspector({ session }: { session: SessionControls }) {
+  const memory = useContext(SessionMemory)!;
   const scan = useScan();
   const area = useRegionScan();
-  const [language, setLanguage] = useState<Language>("deu");
+  const [language, setLanguage] = useImageState<Language>("language", "eng");
   const [dragging, setDragging] = useState(false);
   const dragDepth = useRef(0);
   const [notice, setNotice] = useState("");
-  const [selected, select] = useState<number | null>(null);
-  const [expectedByLine, setExpectedByLine] = useState<Record<number, string>>(
-    {},
-  );
-  const [decisions, setDecisions] = useState<Record<number, HumanDecision>>({});
+  const [selected, select] = useImageState<number | null>("selected", null);
+  const [expectedByLine, setExpectedByLine] = useImageState<
+    Record<number, string>
+  >("expectedByLine", {});
+  const [decisions, setDecisions] = useImageState<
+    Record<number, HumanDecision>
+  >("decisions", {});
   const expected = selected === null ? "" : (expectedByLine[selected] ?? "");
   function setExpected(value: string) {
     if (selected === null) return;
@@ -58,9 +63,9 @@ function Inspector() {
       return next;
     });
   }
-  const [judgments, setJudgments] = useState<
+  const [judgments, setJudgments] = useImageState<
     Record<number, { value: string; outcome: ReturnType<typeof compareText> }>
-  >({});
+  >("judgments", {});
   const input = useRef<HTMLInputElement>(null);
   const candidates = scan.lines
     .map((line, i) => ({ line, i }))
@@ -92,24 +97,22 @@ function Inspector() {
     setNotice("");
   }
   function openFiles(files: FileList | null) {
-    if (!files?.length) return;
-    if (files.length !== 1) {
-      setNotice("Choose one screenshot at a time.");
-      return;
-    }
-    const file = files[0];
-    clearReview();
-    void scan.run({ file, name: file.name }, language);
+    session.add(files);
   }
   function example(id: (typeof examples)[number]["id"]) {
     const item = examples.find((e) => e.id === id)!;
-    clearReview();
-    setLanguage(item.lang);
-    void scan.run(
-      { name: item.id + ".png", url: assets + "examples/" + item.id + ".png" },
-      item.lang,
-    );
+    session.example(id, item.lang);
   }
+  useEffect(() => {
+    const id = memory.get("example") as string | undefined;
+    if (id) {
+      memory.delete("example");
+      void scan.run(
+        { name: id + ".png", url: assets + "examples/" + id + ".png" },
+        language,
+      );
+    }
+  }, []);
   function dropped(e: DragEvent) {
     e.preventDefault();
     dragDepth.current = 0;
@@ -131,7 +134,7 @@ function Inspector() {
     }));
   }
   const result = scan.phase === "complete";
-  const working = scan.phase === "reading";
+  const working = scan.phase === "reading" || area.phase === "reading";
   return (
     <div
       className="app"
@@ -172,9 +175,16 @@ function Inspector() {
           <h1>
             Screenshot inspector<span className="title-dot">.</span>
           </h1>
-          <p>Spot cut-off text in localized app screenshots.</p>
+          <p>Review localized text, one area at a time.</p>
+          <p className="muted">
+            English and German OCR is experimental. Text must be visible; hard
+            cut-offs without an ellipsis may be missed. Models download on first
+            use. Images stay on your device.
+          </p>
         </section>
+        {session.panel}
         <input
+          multiple
           type="file"
           ref={input}
           accept="image/png,.png"
@@ -192,7 +202,7 @@ function Inspector() {
                 Screenshot
               </strong>
               <div className="bar-actions">
-                {!working && scan.picture && (
+                {scan.picture && !working && (
                   <button
                     type="button"
                     className="small-button"
@@ -213,11 +223,12 @@ function Inspector() {
                   <button
                     className="link-btn"
                     onClick={() => {
-                      clearReview();
-                      scan.reset();
+                      if (scan.phase === "reading") scan.cancel();
+                      else if (area.phase === "reading") area.cancel();
+                      else session.remove();
                     }}
                   >
-                    {working ? "Cancel" : "Clear"}
+                    {working ? "Cancel" : "Remove image"}
                   </button>
                 )}
                 <button
@@ -230,19 +241,34 @@ function Inspector() {
               </div>
             </header>
             {scan.picture ? (
-              <Screenshot
-                picture={scan.picture}
-                selecting={area.phase === "selecting"}
-                region={area.region}
-                onRegion={(region) => {
-                  if (scan.picture)
-                    void area.read(scan.picture, language, region);
-                }}
-                onCancelSelect={area.clear}
-                candidates={activeCandidates}
-                selected={selected}
-                onSelect={chooseLine}
-              />
+              <div className={session.reference ? "comparison-images" : ""}>
+                <div>
+                  <Screenshot
+                    picture={scan.picture}
+                    selecting={area.phase === "selecting"}
+                    region={area.region}
+                    onRegion={(region) => {
+                      if (scan.picture)
+                        void area.read(scan.picture, language, region);
+                    }}
+                    onCancelSelect={area.clear}
+                    candidates={activeCandidates}
+                    selected={selected}
+                    onSelect={chooseLine}
+                  />
+                </div>
+                {session.reference && (
+                  <figure className="reference-image">
+                    <figcaption>
+                      Reference · {session.reference.name}
+                    </figcaption>
+                    <img
+                      src={session.reference.url}
+                      alt={"Reference screenshot " + session.reference.name}
+                    />
+                  </figure>
+                )}
+              </div>
             ) : (
               <div className="drop-surface">
                 <div className="crop-art" aria-hidden="true">
@@ -255,7 +281,7 @@ function Inspector() {
                   </span>
                 </div>
                 <h2>
-                  {working ? "Opening screenshot…" : "Drop a screenshot here"}
+                  {working ? "Opening screenshot…" : "Drop up to six PNGs here"}
                 </h2>
                 <p>PNG · up to 12 MiB · 6 megapixels</p>
                 {!working && (
@@ -263,7 +289,7 @@ function Inspector() {
                     className="primary"
                     onClick={() => input.current?.click()}
                   >
-                    Choose screenshot <Icon name="arrow" size={16} />
+                    Choose screenshots <Icon name="arrow" size={16} />
                   </button>
                 )}
               </div>
@@ -283,20 +309,37 @@ function Inspector() {
               <label htmlFor="locale">Text language</label>
               <select
                 id="locale"
+                disabled={working}
                 value={language}
                 onChange={(e) => {
                   const lang = e.target.value as Language;
                   setLanguage(lang);
-                  if (scan.last) {
-                    clearReview();
-                    void scan.run(scan.last, lang);
-                  }
+                  clearReview();
+                  scan.invalidate();
                 }}
               >
                 <option value="eng">English</option>
                 <option value="deu">German</option>
               </select>
             </section>
+            {scan.picture && (
+              <section className="settings scan-option">
+                <button
+                  className="small-button"
+                  disabled={working}
+                  onClick={() => {
+                    clearReview();
+                    if (scan.last) void scan.run(scan.last, language);
+                  }}
+                >
+                  Scan full image (optional)
+                </button>
+                <p className="muted">
+                  Experimental clue finder. Review selected areas even when no
+                  clues are found.
+                </p>
+              </section>
+            )}
             <RegionReview
               scan={area}
               picture={scan.picture}
@@ -319,9 +362,15 @@ function Inspector() {
                 )}
               </div>
               <div role="status" aria-live="polite">
-                {scan.phase === "idle" && (
+                {(scan.phase === "idle" ||
+                  scan.phase === "ready" ||
+                  scan.phase === "cancelled") && (
                   <p className="muted">
-                    Open a PNG or try an example to inspect its text.
+                    {scan.phase === "cancelled"
+                      ? "Full-image scan cancelled. Retry when ready."
+                      : scan.picture
+                        ? "Select an area around a label, then enter its full expected text."
+                        : "Open PNGs or try an example to inspect its text."}
                   </p>
                 )}
                 {working && (
@@ -334,12 +383,15 @@ function Inspector() {
                     <progress max={1} value={scan.progress || undefined} />
                   </>
                 )}
-                {scan.phase === "error" && (
+                {(scan.phase === "error" || scan.phase === "cancelled") && (
                   <>
-                    <p className="error">{scan.error}</p>
+                    {scan.phase === "error" && (
+                      <p className="error">{scan.error}</p>
+                    )}
                     {scan.last && (
                       <button
                         className="small-button"
+                        disabled={working}
                         onClick={() => {
                           clearReview();
                           void scan.run(scan.last!, language);
@@ -353,9 +405,9 @@ function Inspector() {
                 {result && (
                   <p
                     className={
-                      activeCandidates.length
-                        ? "result-caption"
-                        : "success-note"
+                      matching && !activeCandidates.length
+                        ? "success-note"
+                        : "result-caption"
                     }
                   >
                     {!scan.lines.length
@@ -521,11 +573,13 @@ function Inspector() {
         <div className="drag-mask">
           <div>
             <Icon name="upload" size={25} />
-            Drop one PNG to inspect
+            Drop up to six PNGs to inspect
           </div>
         </div>
       )}
     </div>
   );
 }
-createRoot(document.getElementById("root")!).render(<Inspector />);
+createRoot(document.getElementById("root")!).render(
+  <ImageSession>{(session) => <Inspector session={session} />}</ImageSession>,
+);
