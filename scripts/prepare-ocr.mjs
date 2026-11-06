@@ -2,6 +2,7 @@ import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 
 const require = createRequire(import.meta.url);
 const destination = fileURLToPath(new URL("../public/ocr/", import.meta.url));
@@ -39,6 +40,7 @@ const credits = [
   "OCR core: https://github.com/naptha/tesseract.js-core (Apache-2.0)",
   "Language models: https://github.com/tesseract-ocr/tessdata_best (Apache-2.0)",
 ];
+const models = [];
 for (const lang of ["eng", "deu"]) {
   const dir = packageDir(`@tesseract.js-data/${lang}`);
   const filename = `${lang}.traineddata.gz`;
@@ -52,5 +54,18 @@ for (const lang of ["eng", "deu"]) {
   credits.push(
     `${manifest.name}@${manifest.version}: ${manifest.repository.url} (${manifest.license})`,
   );
+  const bytes = await readFile(join(destination, filename));
+  models.push({
+    language: lang,
+    file: filename,
+    package: `${manifest.name}@${manifest.version}`,
+    bytes: bytes.length,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+    license: manifest.license,
+  });
 }
 await writeFile(join(destination, "NOTICE.txt"), credits.join("\n") + "\n");
+await writeFile(
+  join(destination, "models.json"),
+  JSON.stringify(models, null, 2) + "\n",
+);
