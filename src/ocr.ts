@@ -6,7 +6,13 @@ export type ScanLine = {
   bbox: { x0: number; y0: number; x1: number; y1: number };
 };
 
-type Action = "load" | "loadLanguage" | "initialize" | "recognize";
+type Action = "load" | "loadLanguage" | "initialize" | "recognize" | "FS";
+
+type Engine = { worker: Worker; language: string; ready: boolean };
+let engine: Engine | undefined;
+let cancelActive: (() => void) | undefined;
+const emptyPng =
+  "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFElEQVR4nGP4TyJgGNUwqmH4agAAr639H708R/EAAAAASUVORK5CYII=";
 
 export function createScan(
   language: "eng" | "deu",
@@ -14,15 +20,19 @@ export function createScan(
 ) {
   const base = new URL(import.meta.env.BASE_URL, document.baseURI);
   const assets = new URL("ocr/", base);
-  let worker: Worker | undefined;
+  let currentEngine: Engine | undefined;
+  let running = false;
   let rejectPending: ((reason: Error) => void) | undefined;
   let used = false;
   let cancelled = false;
 
   function cancel() {
     cancelled = true;
-    worker?.terminate();
-    rejectPending?.(new DOMException("Scan cancelled.", "AbortError"));
+    if (running) {
+      currentEngine?.worker.terminate();
+      if (engine === currentEngine) engine = undefined;
+      rejectPending?.(new DOMException("Scan cancelled.", "AbortError"));
+    }
   }
 
   // Use the pinned v7 worker protocol to own the Worker from the first request.
@@ -32,9 +42,9 @@ export function createScan(
     payload: object,
     transfer: Transferable[] = [],
   ): Promise<T> {
-    if (cancelled || !worker)
+    if (cancelled || !currentEngine)
       throw new DOMException("Scan cancelled.", "AbortError");
-    const active = worker;
+    const active = currentEngine.worker;
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       return await new Promise<T>((resolve, reject) => {
@@ -69,6 +79,9 @@ export function createScan(
     } finally {
       clearTimeout(timer);
       rejectPending = undefined;
+      active.onmessage = null;
+      active.onerror = null;
+      active.onmessageerror = null;
     }
   }
 
@@ -76,21 +89,36 @@ export function createScan(
     if (cancelled) throw new DOMException("Scan cancelled.", "AbortError");
     if (used) throw new Error("Start a new scan for another screenshot.");
     used = true;
+    cancelActive?.();
+    cancelActive = cancel;
+    running = true;
+    if (engine && engine.language !== language) {
+      engine.worker.terminate();
+      engine = undefined;
+    }
     try {
-      worker = new Worker(new URL("worker.min.js", assets));
-      await runStep("load", {
-        options: { lstmOnly: true, corePath: assets.href },
-      });
-      await runStep("loadLanguage", {
-        langs: language,
-        options: {
-          langPath: assets.href,
-          gzip: true,
-          lstmOnly: true,
-          cacheMethod: "none",
-        },
-      });
-      await runStep("initialize", { langs: language, oem: 1 });
+      currentEngine = engine ?? {
+        worker: new Worker(new URL("worker.min.js", assets)),
+        language,
+        ready: false,
+      };
+      engine = currentEngine;
+      if (!currentEngine.ready) {
+        await runStep("load", {
+          options: { lstmOnly: true, corePath: assets.href },
+        });
+        await runStep("loadLanguage", {
+          langs: language,
+          options: {
+            langPath: assets.href,
+            gzip: true,
+            lstmOnly: true,
+            cacheMethod: "none",
+          },
+        });
+        await runStep("initialize", { langs: language, oem: 1 });
+        currentEngine.ready = true;
+      }
       const bytes = await image.arrayBuffer();
       const page = await runStep<Page>(
         "recognize",
@@ -101,7 +129,7 @@ export function createScan(
         },
         [bytes],
       );
-      return (page.blocks ?? [])
+      const lines = (page.blocks ?? [])
         .flatMap((block) =>
           block.paragraphs.flatMap((paragraph) =>
             paragraph.lines.map((line) => ({
@@ -112,9 +140,28 @@ export function createScan(
           ),
         )
         .filter((line) => line.text.length > 0);
+      // Keep only static model resources between jobs, not the last screenshot.
+      const empty = Uint8Array.from(atob(emptyPng), (byte) =>
+        byte.charCodeAt(0),
+      );
+      await runStep(
+        "recognize",
+        {
+          image: empty,
+          options: {},
+          output: { text: false, blocks: false },
+        },
+        [empty.buffer],
+      );
+      await runStep("FS", { method: "unlink", args: ["/input"] });
+      return lines;
+    } catch (error) {
+      currentEngine?.worker.terminate();
+      if (engine === currentEngine) engine = undefined;
+      throw error;
     } finally {
-      worker?.terminate();
-      worker = undefined;
+      running = false;
+      if (cancelActive === cancel) cancelActive = undefined;
     }
   }
 
