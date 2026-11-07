@@ -12,6 +12,10 @@ type Result = {
   lines: ScanLine[];
   reliable: boolean;
 };
+function compareReading(reading: Result, expected: string) {
+  return reading.reliable ? compareText(reading.text, expected) : "unknown";
+}
+
 type Phase =
   "idle" | "selecting" | "cancelled" | "reading" | "complete" | "error";
 
@@ -68,10 +72,16 @@ export function useRegionScan() {
     clear();
     setPhase("selecting");
   }
-  async function read(picture: Picture, language: Language, area: Region) {
+  async function read(
+    picture: Picture,
+    language: Language,
+    area: Region,
+    reference = "",
+  ) {
     clear();
     const id = generation.current;
     setRegion(area);
+    editExpected(reference);
     setPhase("reading");
     let task: ReturnType<typeof createScan> | undefined;
     try {
@@ -111,7 +121,7 @@ export function useRegionScan() {
           bbox.y1 < g.bottom,
       );
       objectUrl.current = URL.createObjectURL(blob);
-      setResult({
+      const reading = {
         preview: objectUrl.current,
         lines: selected,
         text: selected.map((l) => l.text).join("\n"),
@@ -119,7 +129,9 @@ export function useRegionScan() {
           selected.length > 0 &&
           withMargin &&
           selected.every((l) => l.confidence >= 80),
-      });
+      };
+      setResult(reading);
+      if (reference.trim()) setVerdict(compareReading(reading, reference));
       setPhase("complete");
     } catch (e) {
       if (id !== generation.current) return;
@@ -137,9 +149,7 @@ export function useRegionScan() {
   }
   function compare() {
     if (!result || !expected.trim()) return;
-    setVerdict(
-      result.reliable ? compareText(result.text, expected) : "unknown",
-    );
+    setVerdict(compareReading(result, expected));
   }
   return {
     phase,

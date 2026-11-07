@@ -4,7 +4,7 @@ import { ImageSession, type SessionControls } from "./ImageSession";
 import { useImageState, SessionMemory } from "./SessionState";
 import { Icon } from "./Icon";
 import { compareText, hasTrailingEllipsis, matchedCandidate } from "./review";
-import { useScan, type Language } from "./useScan";
+import { useScan, type Language, type Source } from "./useScan";
 import { Screenshot } from "./Screenshot";
 import { useRegionScan } from "./useRegionScan";
 import { RegionReview } from "./RegionReview";
@@ -12,29 +12,8 @@ import { ReviewExport } from "./ReviewExport";
 import type { HumanDecision } from "./annotation";
 import "./style.css";
 
-const examples = [
-  {
-    id: "clipped",
-    title: "Clipped title",
-    subtitle: "German",
-    lang: "deu",
-    sample: "Aa…",
-  },
-  {
-    id: "wrapped",
-    title: "Wrapped title",
-    subtitle: "German",
-    lang: "deu",
-    sample: "Aa",
-  },
-  {
-    id: "loading",
-    title: "Intentional ellipsis",
-    subtitle: "English",
-    lang: "eng",
-    sample: "…",
-  },
-] as const;
+import { examples } from "./examples";
+
 const assets = import.meta.env.BASE_URL;
 
 function Inspector({ session }: { session: SessionControls }) {
@@ -103,14 +82,25 @@ function Inspector({ session }: { session: SessionControls }) {
     const item = examples.find((e) => e.id === id)!;
     session.example(id, item.lang);
   }
+  async function inspect(source: Source) {
+    const guide = examples.find(
+      (item) => item.id === memory.get("pending-example"),
+    );
+    const picture = await scan.run(source, language);
+    if (picture && guide && memory.get("pending-example") === guide.id) {
+      memory.delete("pending-example");
+      await area.read(picture, language, guide.region, guide.expected);
+    }
+  }
   useEffect(() => {
     const id = memory.get("example") as string | undefined;
     if (id) {
       memory.delete("example");
-      void scan.run(
-        { name: id + ".png", url: assets + "examples/" + id + ".png" },
-        language,
-      );
+      memory.set("pending-example", id);
+      void inspect({
+        name: id + ".png",
+        url: assets + "examples/" + id + ".png",
+      });
     }
   }, []);
   function dropped(e: DragEvent) {
@@ -175,7 +165,7 @@ function Inspector({ session }: { session: SessionControls }) {
           <h1>
             Screenshot inspector<span className="title-dot">.</span>
           </h1>
-          <p>Review localized text, one area at a time.</p>
+          <p>Check whether a translated label fits in your screenshot.</p>
           <p className="muted">
             English and German OCR is experimental. Text must be visible; hard
             cut-offs without an ellipsis may be missed. Models download on first
@@ -248,6 +238,7 @@ function Inspector({ session }: { session: SessionControls }) {
                     selecting={area.phase === "selecting"}
                     region={area.region}
                     onRegion={(region) => {
+                      memory.delete("pending-example");
                       if (scan.picture)
                         void area.read(scan.picture, language, region);
                     }}
@@ -314,6 +305,7 @@ function Inspector({ session }: { session: SessionControls }) {
                 onChange={(e) => {
                   const lang = e.target.value as Language;
                   setLanguage(lang);
+                  memory.delete("pending-example");
                   clearReview();
                   scan.invalidate();
                 }}
@@ -328,6 +320,7 @@ function Inspector({ session }: { session: SessionControls }) {
                   className="small-button"
                   disabled={working}
                   onClick={() => {
+                    memory.delete("pending-example");
                     clearReview();
                     if (scan.last) void scan.run(scan.last, language);
                   }}
@@ -346,7 +339,12 @@ function Inspector({ session }: { session: SessionControls }) {
               language={language}
               retry={() => {
                 if (scan.picture && area.region)
-                  void area.read(scan.picture, language, area.region);
+                  void area.read(
+                    scan.picture,
+                    language,
+                    area.region,
+                    area.expected,
+                  );
               }}
             />
             <section
@@ -373,7 +371,7 @@ function Inspector({ session }: { session: SessionControls }) {
                         : "Open PNGs or try an example to inspect its text."}
                   </p>
                 )}
-                {working && (
+                {scan.phase === "reading" && (
                   <>
                     <p className="reading">
                       {scan.progress > 0
@@ -394,7 +392,7 @@ function Inspector({ session }: { session: SessionControls }) {
                         disabled={working}
                         onClick={() => {
                           clearReview();
-                          void scan.run(scan.last!, language);
+                          void inspect(scan.last!);
                         }}
                       >
                         Retry
@@ -543,6 +541,10 @@ function Inspector({ session }: { session: SessionControls }) {
               <div className="section-heading">
                 <h2>Try an example</h2>
               </div>
+              <p className="muted">
+                Each example compares the selected title with its original
+                wording. You can edit the wording and compare again.
+              </p>
               {examples.map((e) => (
                 <button
                   key={e.id}
