@@ -2,7 +2,7 @@
 
 **English** | [简体中文](./README.zh-CN.md)
 
-Check whether a translated label fits in an app screenshot. Select the label, paste the full translation, and see which ending is missing. English and German text recognition runs in your browser.
+Will It Clip? is a localization QA tool for checking text truncation in app screenshots. Select an English or German label in a PNG and paste the full translation. The app uses OCR in your browser to read the label and shows the missing ending when the visible text matches the start of the translation.
 
 **[Try Will It Clip? in your browser](https://privacy.iamtaoxin.com/will-it-clip/)** · [Run locally](#run-locally)
 
