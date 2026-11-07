@@ -189,12 +189,16 @@ function Inspector({ session }: { session: SessionControls }) {
             use. Images stay on your device.
           </p>
           {!scan.last && !scan.picture && (
-            <button
-              className="small-button intro-example"
-              onClick={() => example("clipped")}
-            >
-              Try a sample screenshot <Icon name="arrow" size={16} />
-            </button>
+            <div className="intro-actions">
+              <button
+                className="small-button intro-example"
+                onClick={() => example("clipped")}
+              >
+                Try a sample screenshot <Icon name="arrow" size={16} />
+              </button>
+              <a href={assets + "demo.gif"}>Watch the 10-second demo</a>
+              <a href="https://github.com/taosin/will-it-clip">GitHub</a>
+            </div>
           )}
         </section>
         {session.panel}
