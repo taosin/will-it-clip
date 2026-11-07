@@ -1,4 +1,11 @@
 import { defineConfig } from "vite";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+
+const demoVersion = createHash("sha256")
+  .update(readFileSync(new URL("./public/demo.gif", import.meta.url)))
+  .digest("hex")
+  .slice(0, 12);
 
 export default defineConfig(({ command, isPreview }) => {
   const development = command === "serve" && !isPreview;
@@ -23,6 +30,7 @@ export default defineConfig(({ command, isPreview }) => {
     "X-Content-Type-Options": "nosniff",
   };
   return {
+    define: { "import.meta.env.VITE_DEMO_VERSION": JSON.stringify(demoVersion) },
     server: { headers },
     preview: { headers },
     plugins: [
