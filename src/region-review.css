@@ -67,6 +67,16 @@
   background: #fff2df;
   color: #75491a;
 }
+.missing-ending {
+  display: block;
+  margin-top: 8px;
+}
+.missing-ending strong {
+  display: block;
+  font-size: 15px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .panel-bar {
   flex-wrap: wrap;
 }

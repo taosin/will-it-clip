@@ -1,7 +1,7 @@
 import { ReviewExport } from "./ReviewExport";
 import type { Picture } from "./useScan";
 import { Icon } from "./Icon";
-import { hasTrailingEllipsis } from "./review";
+import { compareLabel, hasTrailingEllipsis } from "./review";
 import type { useRegionScan } from "./useRegionScan";
 import "./region-review.css";
 
@@ -17,6 +17,10 @@ export function RegionReview({
   language: string;
 }) {
   if (scan.phase === "idle") return null;
+  const comparison =
+    scan.verdict === "shortened" && scan.result?.reliable
+      ? compareLabel(scan.result.text, scan.expected)
+      : null;
   return (
     <section
       className="region-review"
@@ -119,6 +123,12 @@ export function RegionReview({
                 : scan.verdict === "shortened"
                   ? "The visible prefix matches, but the ending is missing. Check the screenshot to confirm."
                   : "Unable to verify the full label. Review the crop and the expected text."}
+              {comparison?.verdict === "shortened" && (
+                <span className="missing-ending">
+                  Missing from the visible label
+                  <strong data-missing-text>{comparison.missing}</strong>
+                </span>
+              )}
             </p>
           )}
         </>
