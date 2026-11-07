@@ -67,6 +67,7 @@ export function useScan() {
     const current = () => generation.current === id;
     setPhase("reading");
     setLast(source);
+    let inspected = picture;
     let task: ReturnType<typeof createScan> | undefined;
     try {
       let file: Blob;
@@ -96,7 +97,8 @@ export function useScan() {
             throw new Error("The PNG dimensions could not be verified.");
           if (imageUrl.current) URL.revokeObjectURL(imageUrl.current);
           imageUrl.current = url;
-          setPicture({ url, name: source.name, ...dims });
+          inspected = { url, name: source.name, ...dims };
+          setPicture(inspected);
         } catch (error) {
           URL.revokeObjectURL(url);
           throw error;
@@ -114,6 +116,7 @@ export function useScan() {
       if (!current()) return;
       setLines(result.filter((line) => line.text.trim()));
       setPhase("complete");
+      return inspected;
     } catch (e) {
       if (current()) {
         setError(
