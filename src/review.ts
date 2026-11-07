@@ -2,31 +2,39 @@ import type { ScanLine } from "./ocr";
 import type { Region } from "./region";
 
 function normalized(text: string) {
-  return text
-    .normalize("NFC")
-    .trim()
-    .replace(/\s+/gu, " ")
-    .replace(/\s*(?:\.{3}|…)$/u, "…");
+  return text.normalize("NFC").trim().replace(/\s+/gu, " ");
+}
+
+function canonicalEnding(text: string) {
+  return text.replace(/\s*(?:\.{3}|…)$/u, "…");
 }
 
 export function hasTrailingEllipsis(text: string) {
-  const value = normalized(text);
+  const value = canonicalEnding(normalized(text));
   return value.endsWith("…") && /\p{L}/u.test(value);
 }
 
-export function compareText(
+type LabelComparison =
+  | { verdict: "complete" | "unknown" }
+  | { verdict: "shortened"; missing: string };
+
+export function compareLabel(
   observed: string,
   expected: string,
-): "complete" | "shortened" | "unknown" {
-  const actual = normalized(observed);
+): LabelComparison {
+  const actual = canonicalEnding(normalized(observed));
   const full = normalized(expected);
-  if (actual && actual === full) return "complete";
-  if (!hasTrailingEllipsis(actual)) return "unknown";
+  if (actual && actual === canonicalEnding(full)) return { verdict: "complete" };
+  if (!hasTrailingEllipsis(actual)) return { verdict: "unknown" };
   const prefix = actual.slice(0, -1).trimEnd();
-  return full.startsWith(prefix) &&
-    /[\p{L}\p{N}]/u.test(full.slice(prefix.length))
-    ? "shortened"
-    : "unknown";
+  const missing = full.slice(prefix.length);
+  if (full.startsWith(prefix) && /[\p{L}\p{N}]/u.test(missing))
+    return { verdict: "shortened", missing };
+  return { verdict: "unknown" };
+}
+
+export function compareText(observed: string, expected: string) {
+  return compareLabel(observed, expected).verdict;
 }
 
 // Only clear a full-image finding when both scans read the same label in the
