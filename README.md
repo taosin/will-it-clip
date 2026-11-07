@@ -1,8 +1,10 @@
 # Will It Clip?
 
+**English** | [简体中文](./README.zh-CN.md)
+
 Check whether a translated label fits in an app screenshot. Select the label, paste the full translation, and see which ending is missing. English and German text recognition runs in your browser.
 
-**[Try Will It Clip? in your browser](https://privacy.iamtaoxin.com/will-it-clip/)** · [Run locally](#run-locally) · [简体中文](#简体中文)
+**[Try Will It Clip? in your browser](https://privacy.iamtaoxin.com/will-it-clip/)** · [Run locally](#run-locally)
 
 Choose **Try a sample screenshot** to see how “Check your inbox” can turn into “Check your bum…” on a small screen. The sample recreates a German title cut short at *Po…*, partway through *Posteingang* (“inbox”). [Original Mastodon iOS report](https://github.com/mastodon/mastodon-ios/issues/1139)
 
@@ -38,9 +40,3 @@ npm run dev
 ```
 
 Open the local URL printed in the terminal. To preview a production build, run `npm run build` followed by `npm run preview`.
-
-## 简体中文
-
-Will It Clip? 帮你检查多语言界面里的文字有没有被截短。打开体验页，点 **Try a sample screenshot**，就能看到德语标题缺了哪些字母。检查自己的截图时，导入 PNG，框选完整标签，填入同一语言的预期全文，再点 **Compare text**。确认后可以下载带标注的局部截图，附到缺陷报告里。
-
-当前支持英语和德语，截图在浏览器内处理。[在线体验](https://privacy.iamtaoxin.com/will-it-clip/)
