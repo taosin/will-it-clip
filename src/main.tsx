@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { ImageSession, type SessionControls } from "./ImageSession";
 import { useImageState, SessionMemory } from "./SessionState";
 import { Icon } from "./Icon";
+import { PageHeader, Introduction } from "./Introduction";
 import { compareText, hasTrailingEllipsis, matchedCandidate } from "./review";
 import { useScan, type Language, type Source } from "./useScan";
 import { Screenshot } from "./Screenshot";
@@ -10,7 +11,6 @@ import { useRegionScan } from "./useRegionScan";
 import { RegionReview } from "./RegionReview";
 import { ReviewExport } from "./ReviewExport";
 import type { HumanDecision } from "./annotation";
-import "./style.css";
 
 import { examples } from "./examples";
 
@@ -166,43 +166,14 @@ function Inspector({ session }: { session: SessionControls }) {
       }}
       onDrop={dropped}
     >
-      <header className="bar">
-        <div className="bar-inner">
-          <a className="brand" href={assets} aria-label="Will It Clip? home">
-            <img src={assets + "mark.svg"} width="32" height="32" alt="" />
-            Will It Clip?
-          </a>
-          <div className="privacy">
-            <Icon name="shield" size={16} /> Runs on your device
-          </div>
-        </div>
-      </header>
+      <PageHeader base={assets} />
       <main>
-        <section className="intro">
-          <h1>
-            Screenshot inspector<span className="title-dot">.</span>
-          </h1>
-          <p>Check whether a translated label fits in your screenshot.</p>
-          <p className="muted">
-            English and German OCR is experimental. Text must be visible; hard
-            cut-offs without an ellipsis may be missed. Models download on first
-            use. Images stay on your device.
-          </p>
-          {!scan.last && !scan.picture && (
-            <div className="intro-actions">
-              <button
-                className="small-button intro-example"
-                onClick={() => example("clipped")}
-              >
-                Try a sample screenshot <Icon name="arrow" size={16} />
-              </button>
-              <a href={`${assets}demo.gif?v=${import.meta.env.VITE_DEMO_VERSION}`}>
-                Watch the 10-second demo
-              </a>
-              <a href="https://github.com/taosin/will-it-clip">GitHub</a>
-            </div>
-          )}
-        </section>
+        <Introduction
+          base={assets}
+          demoVersion={import.meta.env.VITE_DEMO_VERSION}
+          showActions={!scan.last && !scan.picture}
+          onExample={() => example("clipped")}
+        />
         {session.panel}
         <input
           multiple
