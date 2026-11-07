@@ -1,6 +1,9 @@
 import { defineConfig } from "vite";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { StaticLanding } from "./src/Introduction.tsx";
 
 const demoVersion = createHash("sha256")
   .update(readFileSync(new URL("./public/demo.gif", import.meta.url)))
@@ -8,6 +11,7 @@ const demoVersion = createHash("sha256")
   .slice(0, 12);
 
 export default defineConfig(({ command, isPreview }) => {
+  let landingMarkup;
   const development = command === "serve" && !isPreview;
   const connections = development
     ? "'self' ws://localhost:* ws://127.0.0.1:*"
@@ -34,6 +38,17 @@ export default defineConfig(({ command, isPreview }) => {
     server: { headers },
     preview: { headers },
     plugins: [
+      {
+        name: "render-inspector-intro",
+        configResolved(config) {
+          landingMarkup = renderToStaticMarkup(
+            createElement(StaticLanding, { base: config.base, demoVersion }),
+          );
+        },
+        transformIndexHtml(html) {
+          return html.replace("<!--inspector-intro-->", () => landingMarkup);
+        },
+      },
       {
         name: "local-content-policy",
         transformIndexHtml() {

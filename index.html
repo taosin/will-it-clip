@@ -4,15 +4,36 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="#f8f9f6" />
-    <meta
-      name="description"
-      content="Find cut-off text in localized app screenshots, right in your browser."
-    />
-    <title>Will It Clip? · Screenshot inspector</title>
+    <title>Will It Clip? · Screenshot text truncation checker for localization QA</title>
+    <meta name="description" content="Check translated labels for text truncation in PNG screenshots. Compare the full label with English or German OCR in your browser. Screenshots stay on your device." />
+    <link rel="canonical" href="https://privacy.iamtaoxin.com/will-it-clip/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Will It Clip? · Screenshot text truncation checker" />
+    <meta property="og:description" content="Compare a translated label with the text visible in a PNG screenshot. English and German OCR runs on your device." />
+    <meta property="og:url" content="https://privacy.iamtaoxin.com/will-it-clip/" />
+    <meta property="og:image" content="https://privacy.iamtaoxin.com/will-it-clip/examples/clipped.png" />
+    <meta property="og:image:alt" content="Sample screenshot with a German title cut short at ‘Überprüfe deinen Po…’" />
+    <meta name="twitter:card" content="summary" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Will It Clip?",
+        "url": "https://privacy.iamtaoxin.com/will-it-clip/",
+        "sameAs": "https://github.com/taosin/will-it-clip",
+        "isAccessibleForFree": true,
+        "description": "A browser-based localization QA tool for comparing text in PNG screenshots with the expected English or German label.",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and WebAssembly",
+        "inLanguage": "en"
+      }
+    </script>
     <link rel="icon" href="./mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><!--inspector-intro--></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
