@@ -1,3 +1,4 @@
+import type { Ref } from "react";
 import { ReviewExport } from "./ReviewExport";
 import type { Picture } from "./useScan";
 import { Icon } from "./Icon";
@@ -6,11 +7,13 @@ import type { useRegionScan } from "./useRegionScan";
 import "./region-review.css";
 
 export function RegionReview({
+  panelRef,
   scan,
   retry,
   picture,
   language,
 }: {
+  panelRef: Ref<HTMLElement>;
   scan: ReturnType<typeof useRegionScan>;
   retry: () => void;
   picture: Picture | null;
@@ -23,6 +26,8 @@ export function RegionReview({
       : null;
   return (
     <section
+      ref={panelRef}
+      tabIndex={-1}
       className="region-review"
       aria-label="Selected area review"
       data-region-status={scan.phase}
