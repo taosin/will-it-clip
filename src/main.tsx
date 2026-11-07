@@ -196,7 +196,9 @@ function Inspector({ session }: { session: SessionControls }) {
               >
                 Try a sample screenshot <Icon name="arrow" size={16} />
               </button>
-              <a href={assets + "demo.gif"}>Watch the 10-second demo</a>
+              <a href={`${assets}demo.gif?v=${import.meta.env.VITE_DEMO_VERSION}`}>
+                Watch the 10-second demo
+              </a>
               <a href="https://github.com/taosin/will-it-clip">GitHub</a>
             </div>
           )}
