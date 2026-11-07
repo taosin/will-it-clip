@@ -46,6 +46,18 @@ function Inspector({ session }: { session: SessionControls }) {
     Record<number, { value: string; outcome: ReturnType<typeof compareText> }>
   >("judgments", {});
   const input = useRef<HTMLInputElement>(null);
+  const reviewPanel = useRef<HTMLElement>(null);
+  const revealExample = useRef(false);
+  function keepPosition() {
+    revealExample.current = false;
+  }
+  useEffect(() => {
+    if (area.phase !== "complete" || !revealExample.current) return;
+    keepPosition();
+    if (document.activeElement !== document.body) return;
+    reviewPanel.current?.focus({ preventScroll: true });
+    reviewPanel.current?.scrollIntoView({ block: "start" });
+  }, [area.phase]);
   const candidates = scan.lines
     .map((line, i) => ({ line, i }))
     .filter(({ line }) => hasTrailingEllipsis(line.text));
@@ -86,6 +98,7 @@ function Inspector({ session }: { session: SessionControls }) {
     const guide = examples.find(
       (item) => item.id === memory.get("pending-example"),
     );
+    revealExample.current = !!guide;
     const picture = await scan.run(source, language);
     if (picture && guide && memory.get("pending-example") === guide.id) {
       memory.delete("pending-example");
@@ -128,6 +141,10 @@ function Inspector({ session }: { session: SessionControls }) {
   return (
     <div
       className="app"
+      onPointerDownCapture={keepPosition}
+      onKeyDownCapture={keepPosition}
+      onWheelCapture={keepPosition}
+      onFocusCapture={keepPosition}
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) e.preventDefault();
       }}
@@ -171,6 +188,14 @@ function Inspector({ session }: { session: SessionControls }) {
             cut-offs without an ellipsis may be missed. Models download on first
             use. Images stay on your device.
           </p>
+          {!scan.last && !scan.picture && (
+            <button
+              className="small-button intro-example"
+              onClick={() => example("clipped")}
+            >
+              Try a sample screenshot <Icon name="arrow" size={16} />
+            </button>
+          )}
         </section>
         {session.panel}
         <input
@@ -334,6 +359,7 @@ function Inspector({ session }: { session: SessionControls }) {
               </section>
             )}
             <RegionReview
+              panelRef={reviewPanel}
               scan={area}
               picture={scan.picture}
               language={language}
