@@ -10,6 +10,8 @@ Will It Clip? is a localization QA tool for checking text truncation in app scre
 
 [![Ten-second demo showing a clipped German title and the missing letters “steingang”](public/demo.gif)](https://github.com/taosin/will-it-clip/blob/main/public/demo.gif)
 
+[Explore a second case from Signal iOS](https://privacy.iamtaoxin.com/will-it-clip/cases/signal-german-text/). Its German privacy notice lost the last two words without showing an ellipsis.
+
 ## What the examples show
 
 | Screenshot | Expected text | Result |

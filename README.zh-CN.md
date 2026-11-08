@@ -10,6 +10,8 @@ Will It Clip? 是一个本地化测试工具，用来检查应用截图里的译
 
 [![十秒演示：对照德语标题，找出截图中缺失的字母 steingang](public/demo.gif)](https://github.com/taosin/will-it-clip/blob/main/public/demo.gif)
 
+[查看 Signal iOS 的德语案例](https://privacy.iamtaoxin.com/will-it-clip/cases/signal-german-text/)。隐私提示末尾少了两个词，界面上没有省略号。
+
 ## 示例对照
 
 | 截图中的文字 | 预期全文 | 对照结果 |

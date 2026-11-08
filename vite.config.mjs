@@ -35,6 +35,9 @@ export default defineConfig(({ command, isPreview }) => {
   };
   return {
     define: { "import.meta.env.VITE_DEMO_VERSION": JSON.stringify(demoVersion) },
+    build: {
+      rollupOptions: { input: ["index.html", "cases/signal-german-text/index.html"] },
+    },
     server: { headers },
     preview: { headers },
     plugins: [

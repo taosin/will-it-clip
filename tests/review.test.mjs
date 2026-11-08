@@ -77,3 +77,16 @@ test("a region match cannot clear a different label in the same area", async () 
     null,
   );
 });
+
+test("a hard cutoff at a word boundary shows the missing words", async () => {
+  const { compareLabel } = await import("../src/review.ts");
+  const expected = "Sie sind nur für dich sichtbar.";
+  assert.deepEqual(compareLabel("Sie sind\nnur für", expected), {
+    verdict: "shortened",
+    missing: " dich sichtbar.",
+  });
+  for (const observed of ["", "Sie sind nur fur", "Sie sind nur fü", "…"]) {
+    assert.equal(compareLabel(observed, expected).verdict, "unknown");
+  }
+  assert.equal(hasTrailingEllipsis("Sie sind nur für"), false);
+});

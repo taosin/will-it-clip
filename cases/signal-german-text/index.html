@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f8f9f6" />
+    <title>How to check for cut-off German text in a screenshot · Will It Clip?</title>
+    <meta name="description" content="Recreate a Signal iOS bug in which a German privacy notice lost its last two words. Compare the screenshot with the full text using local OCR." />
+    <link rel="canonical" href="https://privacy.iamtaoxin.com/will-it-clip/cases/signal-german-text/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="The two words missing from a Signal privacy notice" />
+    <meta property="og:description" content="Try a screenshot where the German text stops mid-sentence without an ellipsis." />
+    <meta property="og:url" content="https://privacy.iamtaoxin.com/will-it-clip/cases/signal-german-text/" />
+    <meta property="og:image" content="https://privacy.iamtaoxin.com/will-it-clip/examples/signal.png" />
+    <meta property="og:image:alt" content="Recreated nickname dialog with a German privacy notice cut short after für." />
+    <link rel="icon" href="%BASE_URL%mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="./case.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <div class="bar-inner">
+        <a class="brand" href="../../" aria-label="Will It Clip? home">
+          <img src="%BASE_URL%mark.svg" alt="" width="32" height="32" /> Will It Clip?
+        </a>
+      </div>
+    </header>
+    <main class="case-page">
+      <article class="case-layout">
+        <div class="case-copy">
+          <h1>When a German privacy notice loses its last two words</h1>
+          <p>In Signal for iOS 7.75, the German nickname dialog on an iPhone 15 Pro cut off the part that told people who could see their nicknames and notes. The text stopped mid-sentence without an ellipsis.</p>
+          <dl class="case-comparison">
+            <dt>Visible ending</dt>
+            <dd lang="de">Sie sind nur für</dd>
+            <dt>Expected ending</dt>
+            <dd lang="de">Sie sind nur für <mark>dich sichtbar.</mark></dd>
+          </dl>
+          <p>The full sentence means “Only you can see them.” To check a hard cut-off like this, compare the selected lines with the complete translation. The example opens with both the text and the screenshot region filled in.</p>
+          <a class="primary case-open" href="../../?example=signal">Check this screenshot</a>
+          <p class="case-source">Signal closed the original report in September 2025. <a href="https://github.com/signalapp/Signal-iOS/issues/6111">Read Signal iOS issue #6111</a>.</p>
+        </div>
+        <figure>
+          <a href="%BASE_URL%examples/signal.png" aria-label="Open the full-size recreated screenshot">
+            <img src="%BASE_URL%examples/signal.png" width="780" height="1180" alt="Recreated German nickname dialog. The privacy notice ends at “Sie sind nur für”." />
+          </a>
+          <figcaption>Recreated screenshot using the wording in the original report.</figcaption>
+        </figure>
+      </article>
+    </main>
+  </body>
+</html>

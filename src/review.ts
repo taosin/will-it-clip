@@ -25,8 +25,14 @@ export function compareLabel(
   const actual = canonicalEnding(normalized(observed));
   const full = normalized(expected);
   if (actual && actual === canonicalEnding(full)) return { verdict: "complete" };
-  if (!hasTrailingEllipsis(actual)) return { verdict: "unknown" };
-  const prefix = actual.slice(0, -1).trimEnd();
+  const ellipsis = hasTrailingEllipsis(actual);
+  const prefix = ellipsis ? actual.slice(0, -1).trimEnd() : actual;
+  // A plain prefix is evidence only when it ends at a word boundary.
+  if (
+    !ellipsis &&
+    (!/[\p{L}\p{N}]/u.test(prefix) || full[prefix.length] !== " ")
+  )
+    return { verdict: "unknown" };
   const missing = full.slice(prefix.length);
   if (full.startsWith(prefix) && /[\p{L}\p{N}]/u.test(missing))
     return { verdict: "shortened", missing };

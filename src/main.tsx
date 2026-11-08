@@ -541,7 +541,7 @@ function Inspector({ session }: { session: SessionControls }) {
                 <h2>Try an example</h2>
               </div>
               <p className="muted">
-                Each example compares the selected title with its original
+                Each example compares the selected text with its original
                 wording. You can edit the wording and compare again.
               </p>
               {examples.map((e) => (

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       notify_search:
-        description: Notify IndexNow that the homepage changed
+        description: Notify IndexNow about the homepage and Signal case
         type: boolean
         default: false
 

@@ -54,6 +54,7 @@ export function Introduction({
             <a href={base + "examples/clipped.png"}>View the sample PNG</a>
           )}
           <a href={base + "demo.gif?v=" + demoVersion}>Watch the 10-second demo</a>
+          <a href={base + "cases/signal-german-text/"}>Signal’s cut-off privacy notice</a>
           <a href="https://github.com/taosin/will-it-clip">GitHub</a>
         </div>
       )}

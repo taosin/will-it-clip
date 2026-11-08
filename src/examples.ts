@@ -26,6 +26,16 @@ export const examples = [
     region: { x: 230, y: 470, width: 320, height: 130 },
     expected: "Loading…",
   },
+  {
+    id: "signal",
+    title: "Nickname privacy note",
+    subtitle: "German · No ellipsis",
+    lang: "deu",
+    sample: "für",
+    region: { x: 26, y: 736, width: 728, height: 172 },
+    expected:
+      "Spitznamen und Notizen werden mit Signal gespeichert und sind Ende-zu-Ende-verschlüsselt. Sie sind nur für dich sichtbar.",
+  },
 ] as const;
 
 export type Example = (typeof examples)[number];

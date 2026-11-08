@@ -1,6 +1,7 @@
 import { appendFileSync, writeFileSync } from "node:fs";
 
 const homepage = new URL("https://privacy.iamtaoxin.com/will-it-clip/");
+const casePage = new URL("cases/signal-german-text/", homepage);
 const key = process.env.INDEXNOW_KEY;
 const mode = process.argv[2];
 
@@ -43,7 +44,7 @@ async function notify() {
       headers: { "Content-Type": "application/json; charset=utf-8" },
       redirect: "error",
       signal: AbortSignal.timeout(15_000),
-      body: JSON.stringify({ host: homepage.host, key, keyLocation, urlList: [homepage.href] }),
+      body: JSON.stringify({ host: homepage.host, key, keyLocation, urlList: [homepage.href, casePage.href] }),
     });
   } catch {
     report("IndexNow returned no receipt. Check service availability before retrying.", true);
@@ -52,9 +53,9 @@ async function notify() {
   }
 
   if (response.status === 200) {
-    report("IndexNow received the homepage URL (HTTP 200). Each search engine decides whether to index it.");
+    report("IndexNow received the homepage and Signal case URLs (HTTP 200). Each search engine decides whether to index it.");
   } else if (response.status === 202) {
-    report("IndexNow received the homepage URL (HTTP 202). Key validation is pending.");
+    report("IndexNow received the homepage and Signal case URLs (HTTP 202). Key validation is pending.");
   } else {
     report(`IndexNow returned HTTP ${response.status}. Check the [response codes](https://www.indexnow.org/documentation) before retrying.`, true);
     process.exitCode = 1;

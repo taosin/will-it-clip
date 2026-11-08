@@ -382,6 +382,7 @@ p {
   background: #e5eddd;
   color: #496744;
 }
+.ex-signal .glyph,
 .ex-loading .glyph {
   background: #e6eaf2;
   color: #576386;
