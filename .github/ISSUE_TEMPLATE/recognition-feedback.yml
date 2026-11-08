@@ -1,0 +1,22 @@
+name: Recognition feedback
+description: Report a misread label, an unexpected comparison, or a failed area scan.
+body:
+  - type: textarea
+    id: actual
+    attributes:
+      label: What result did you see for the selected label?
+      description: Describe the reading, comparison result, or error. Use only details you can share publicly.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: Describe what you could read in the selected area or which comparison result you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Language, example, or redacted crop (optional)
+      description: If relevant, name the OCR language or the built-in example and label you selected. You can also attach a crop with private details removed.

@@ -6,6 +6,9 @@ import { compareLabel, hasTrailingEllipsis } from "./review";
 import type { useRegionScan } from "./useRegionScan";
 import "./region-review.css";
 
+const recognitionFeedbackUrl =
+  "https://github.com/taosin/will-it-clip/issues/new?template=recognition-feedback.yml";
+
 export function RegionReview({
   panelRef,
   scan,
@@ -148,6 +151,20 @@ export function RegionReview({
             onChange={(e) => scan.setExpected(e.target.value)}
           />
         </label>
+      )}
+      {(scan.phase === "complete" || scan.phase === "error") && (
+        <p className="region-feedback">
+          <a
+            href={recognitionFeedbackUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Report a reading or comparison problem on GitHub
+          </a>
+          <span>
+            Opens a blank form in a new tab. Submitted issues are public.
+          </span>
+        </p>
       )}
       {(scan.phase === "complete" || scan.phase === "error") &&
         picture &&

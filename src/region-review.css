@@ -78,6 +78,19 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.region-feedback {
+  margin: 16px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.region-feedback a {
+  color: #234630;
+  text-underline-offset: 2px;
+}
+.region-feedback span {
+  display: block;
+  color: #546559;
+}
 .panel-bar {
   flex-wrap: wrap;
 }
