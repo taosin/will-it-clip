@@ -2,13 +2,14 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { SessionMemory, type Memory } from "./SessionState";
 import { pngDimensions } from "./input";
 import { availableSlots, sessionCounts } from "./session";
+import type { Example } from "./examples";
 import type { Picture } from "./useScan";
 
 type Entry = { id: number; name: string; memory: Memory };
 export type SessionControls = {
   panel: ReactNode;
   add: (files: FileList | null) => void;
-  example: (id: string, language: string) => void;
+  example: (item: Example) => void;
   remove: () => void;
   reference: Picture | null;
 };
@@ -40,20 +41,32 @@ function release(entry: Entry) {
   if (result?.preview) URL.revokeObjectURL(result.preview);
   entry.memory.clear();
 }
+function exampleEntry(id: number, item: Example): Entry {
+  const memory: Memory = new Map([
+    ["language", item.lang],
+    ["example", item.id],
+  ]);
+  return { id, name: item.id + ".png", memory };
+}
+
 export function ImageSession({
+  initialExample,
   children,
 }: {
+  initialExample?: Example;
   children: (controls: SessionControls) => ReactNode;
 }) {
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const [entries, setEntries] = useState<Entry[]>(() =>
+    initialExample ? [exampleEntry(1, initialExample)] : [],
+  );
   const currentEntries = useRef(entries);
   currentEntries.current = entries;
-  const [selected, select] = useState<number | null>(null);
+  const [selected, select] = useState<number | null>(entries[0]?.id ?? null);
   const [, refresh] = useState(0);
   const [notice, setNotice] = useState("");
   const [opening, setOpening] = useState(false);
   const busy = useRef(false);
-  const sequence = useRef(0);
+  const sequence = useRef(entries.length);
   const referenceGeneration = useRef(0);
   const [referenceOpening, setReferenceOpening] = useState(false);
   const [reference, setReference] = useState<Picture | null>(null);
@@ -121,7 +134,7 @@ export function ImageSession({
     // React unmounts the active inspector before releasing its retained snapshots.
     if (removed) setTimeout(() => release(removed), 0);
   }
-  function example(id: string, language: string) {
+  function example(item: Example) {
     if (busy.current) {
       setNotice("Wait for the PNG import to finish before opening an example.");
       return;
@@ -130,11 +143,7 @@ export function ImageSession({
       setNotice("Six-image limit reached. Remove an image first.");
       return;
     }
-    const memory: Memory = new Map([
-      ["language", language],
-      ["example", id],
-    ]);
-    const entry = { id: ++sequence.current, name: id + ".png", memory };
+    const entry = exampleEntry(++sequence.current, item);
     setEntries((previous) => [...previous, entry]);
     select(entry.id);
   }

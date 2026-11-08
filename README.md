@@ -6,9 +6,9 @@ Will It Clip? is a localization QA tool for checking text truncation in app scre
 
 **[Try Will It Clip? in your browser](https://privacy.iamtaoxin.com/will-it-clip/)** · [Run locally](#run-locally)
 
-Choose **Try a sample screenshot** to see how “Check your inbox” can turn into “Check your bum…” on a small screen. The sample recreates a German title cut short at *Po…*, partway through *Posteingang* (“inbox”). [Original Mastodon iOS report](https://github.com/mastodon/mastodon-ios/issues/1139)
+[Run the clipped-title example](https://privacy.iamtaoxin.com/will-it-clip/?example=clipped) to see how “Check your inbox” can turn into “Check your bum…” on a small screen. The sample recreates a German title cut short at *Po…*, partway through *Posteingang* (“inbox”). [Original Mastodon iOS report](https://github.com/mastodon/mastodon-ios/issues/1139)
 
-[![Ten-second demo showing a clipped German title and the missing letters “steingang”](public/demo.gif)](https://privacy.iamtaoxin.com/will-it-clip/)
+[![Ten-second demo showing a clipped German title and the missing letters “steingang”](public/demo.gif)](https://privacy.iamtaoxin.com/will-it-clip/?example=clipped)
 
 ## What the examples show
 

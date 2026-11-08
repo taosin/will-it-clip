@@ -336,14 +336,27 @@ p {
   height: 7px;
   accent-color: #386a44;
 }
+.example-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #edf0e9;
+}
+.example-link {
+  color: #345d49;
+  font-size: 13px;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  padding: 8px 0;
+}
 .example {
   display: flex;
   align-items: center;
   text-align: left;
   gap: 12px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   border: 0;
-  border-top: 1px solid #edf0e9;
   background: transparent;
   padding: 12px 0;
 }

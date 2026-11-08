@@ -27,3 +27,5 @@ export const examples = [
     expected: "Loading…",
   },
 ] as const;
+
+export type Example = (typeof examples)[number];

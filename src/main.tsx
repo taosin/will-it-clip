@@ -90,10 +90,6 @@ function Inspector({ session }: { session: SessionControls }) {
   function openFiles(files: FileList | null) {
     session.add(files);
   }
-  function example(id: (typeof examples)[number]["id"]) {
-    const item = examples.find((e) => e.id === id)!;
-    session.example(id, item.lang);
-  }
   async function inspect(source: Source) {
     const guide = examples.find(
       (item) => item.id === memory.get("pending-example"),
@@ -172,7 +168,7 @@ function Inspector({ session }: { session: SessionControls }) {
           base={assets}
           demoVersion={import.meta.env.VITE_DEMO_VERSION}
           showActions={!scan.last && !scan.picture}
-          onExample={() => example("clipped")}
+          onExample={() => session.example(examples[0])}
         />
         {session.panel}
         <input
@@ -549,21 +545,31 @@ function Inspector({ session }: { session: SessionControls }) {
                 wording. You can edit the wording and compare again.
               </p>
               {examples.map((e) => (
-                <button
-                  key={e.id}
-                  data-example={e.id}
-                  className={"example ex-" + e.id}
-                  onClick={() => example(e.id)}
-                >
-                  <span className="glyph" aria-hidden="true">
-                    {e.sample}
-                  </span>
-                  <span className="example-info">
-                    <strong>{e.title}</strong>
-                    <small>{e.subtitle}</small>
-                  </span>
-                  <Icon name="arrow" size={16} />
-                </button>
+                <div key={e.id} className="example-row">
+                  <button
+                    data-example={e.id}
+                    className={"example ex-" + e.id}
+                    onClick={() => session.example(e)}
+                  >
+                    <span className="glyph" aria-hidden="true">
+                      {e.sample}
+                    </span>
+                    <span className="example-info">
+                      <strong>{e.title}</strong>
+                      <small>{e.subtitle}</small>
+                    </span>
+                    <Icon name="arrow" size={16} />
+                  </button>
+                  <a
+                    className="example-link"
+                    href={assets + "?example=" + e.id}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={e.title + " example link (opens in a new tab)"}
+                  >
+                    Example link
+                  </a>
+                </div>
               ))}
             </section>
           </aside>
@@ -585,6 +591,11 @@ function Inspector({ session }: { session: SessionControls }) {
     </div>
   );
 }
+const requestedExample = new URLSearchParams(window.location.search).get("example");
+const initialExample = examples.find((item) => item.id === requestedExample);
+
 createRoot(document.getElementById("root")!).render(
-  <ImageSession>{(session) => <Inspector session={session} />}</ImageSession>,
+  <ImageSession initialExample={initialExample}>
+    {(session) => <Inspector session={session} />}
+  </ImageSession>,
 );

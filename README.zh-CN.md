@@ -6,9 +6,9 @@ Will It Clip? 是一个本地化测试工具，用来检查应用截图里的译
 
 **[在线试用 Will It Clip?](https://privacy.iamtaoxin.com/will-it-clip/)** · [在本地运行](#在本地运行)
 
-点击 **Try a sample screenshot**，即可查看根据 Mastodon iOS 用户反馈制作的示例。德语标题原本提示用户“查看你的收件箱”，但在小屏幕上，表示“收件箱”的 *Posteingang* 只显示出 *Po…*。恰好 *Po* 在德语口语里是“屁股”的意思，整句就读成了“看看你的屁股……”。[查看原始问题](https://github.com/mastodon/mastodon-ios/issues/1139)
+[运行标题截断示例](https://privacy.iamtaoxin.com/will-it-clip/?example=clipped)，查看 Mastodon iOS 用户反馈的问题。德语标题原本提示用户“查看你的收件箱”，但在小屏幕上，表示“收件箱”的 *Posteingang* 只显示出 *Po…*。恰好 *Po* 在德语口语里是“屁股”的意思，整句就读成了“看看你的屁股……”。[查看原始问题](https://github.com/mastodon/mastodon-ios/issues/1139)
 
-[![十秒演示：对照德语标题，找出截图中缺失的字母 steingang](public/demo.gif)](https://privacy.iamtaoxin.com/will-it-clip/)
+[![十秒演示：对照德语标题，找出截图中缺失的字母 steingang](public/demo.gif)](https://privacy.iamtaoxin.com/will-it-clip/?example=clipped)
 
 ## 示例对照
 
