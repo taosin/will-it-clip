@@ -182,6 +182,9 @@ export function RegionReview({
             onDecision={scan.setDecision}
             recognized={scan.result?.text ?? ""}
             expected={scan.expected}
+            missing={
+              comparison?.verdict === "shortened" ? comparison.missing : undefined
+            }
             machine={
               scan.phase === "error"
                 ? "Area OCR failed; manual visual review only."

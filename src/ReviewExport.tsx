@@ -1,14 +1,61 @@
 import { useEffect, useId, useState } from "react";
 import { renderAnnotation, type HumanDecision } from "./annotation";
+import { formatIssueReport } from "./issueReport";
 import type { Region } from "./region";
 import type { Picture } from "./useScan";
 import "./review-export.css";
+
+function selectReport(field: HTMLTextAreaElement | null) {
+  if (field) {
+    field.focus();
+    field.select();
+  }
+}
+
+function IssueReportCopy({ report }: { report: string }) {
+  const [status, setStatus] = useState<
+    "idle" | "copying" | "copied" | "manual"
+  >("idle");
+
+  async function copyReport() {
+    setStatus("copying");
+    try {
+      await navigator.clipboard.writeText(report);
+      setStatus("copied");
+    } catch {
+      setStatus("manual");
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        className="small-button"
+        disabled={status === "copying"}
+        onClick={copyReport}
+      >
+        Copy GitHub issue report
+      </button>
+      {status === "copied" && (
+        <p role="status">Report copied. Paste it into your issue.</p>
+      )}
+      {status === "manual" && (
+        <label className="report-fallback">
+          Copy the report below and paste it into your issue.
+          <textarea ref={selectReport} value={report} readOnly rows={6} />
+        </label>
+      )}
+    </>
+  );
+}
 
 export function ReviewExport({
   picture,
   region,
   recognized,
   expected,
+  missing,
   machine,
   decision,
   onDecision,
@@ -17,11 +64,15 @@ export function ReviewExport({
   region: Region;
   recognized: string;
   expected: string;
+  missing?: string;
   machine: string;
   decision: HumanDecision;
   onDecision: (decision: HumanDecision) => void;
 }) {
   const id = useId();
+  const report = formatIssueReport({
+    expected, recognized, missing, machine, decision,
+  });
   const [full, setFull] = useState(false);
   const [request, setRequest] = useState(0);
   const [preview, setPreview] = useState("");
@@ -116,6 +167,7 @@ export function ReviewExport({
           </button>
         )}
       </fieldset>
+      <IssueReportCopy key={report} report={report} />
       <label className="export-full">
         <input
           type="checkbox"

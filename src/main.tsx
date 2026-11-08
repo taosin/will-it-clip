@@ -4,7 +4,7 @@ import { ImageSession, type SessionControls } from "./ImageSession";
 import { useImageState, SessionMemory } from "./SessionState";
 import { Icon } from "./Icon";
 import { PageHeader, Introduction } from "./Introduction";
-import { compareText, hasTrailingEllipsis, matchedCandidate } from "./review";
+import { compareLabel, hasTrailingEllipsis, matchedCandidate } from "./review";
 import { useScan, type Language, type Source } from "./useScan";
 import { Screenshot } from "./Screenshot";
 import { useRegionScan } from "./useRegionScan";
@@ -43,7 +43,11 @@ function Inspector({ session }: { session: SessionControls }) {
     });
   }
   const [judgments, setJudgments] = useImageState<
-    Record<number, { value: string; outcome: ReturnType<typeof compareText> }>
+    Record<number, {
+      value: string;
+      outcome: ReturnType<typeof compareLabel>["verdict"];
+      missing?: string;
+    }>
   >("judgments", {});
   const input = useRef<HTMLInputElement>(null);
   const reviewPanel = useRef<HTMLElement>(null);
@@ -123,13 +127,18 @@ function Inspector({ session }: { session: SessionControls }) {
   }
   function compare(i: number) {
     if (!expected.trim()) return;
-    const outcome =
+    const comparison =
       scan.lines[i].confidence >= 80
-        ? compareText(scan.lines[i].text, expected)
-        : "unknown";
+        ? compareLabel(scan.lines[i].text, expected)
+        : { verdict: "unknown" as const };
     setJudgments((previous) => ({
       ...previous,
-      [i]: { value: expected, outcome },
+      [i]: {
+        value: expected,
+        outcome: comparison.verdict,
+        missing:
+          comparison.verdict === "shortened" ? comparison.missing : undefined,
+      },
     }));
   }
   const result = scan.phase === "complete";
@@ -502,6 +511,11 @@ function Inspector({ session }: { session: SessionControls }) {
                             }))
                           }
                           recognized={line.text}
+                          missing={
+                            !resolved.has(i) && judgments[i]?.value === expected
+                              ? judgments[i].missing
+                              : undefined
+                          }
                           expected={
                             resolvedArea === i &&
                             judgments[i]?.outcome !== "complete"

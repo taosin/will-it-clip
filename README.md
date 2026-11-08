@@ -24,7 +24,7 @@ Will It Clip? is a localization QA tool for checking text truncation in app scre
 
 1. Drop a PNG into the inspector and choose the **Text language**. If needed, click **Select area**, then draw a box around one label. Include every line and a little space around the letters.
 2. Paste the full label in the same language and click **Compare text**. Check the enlarged crop alongside the recognized text. If the reading is uncertain, try a wider selection.
-3. Choose **Confirmed** if you see clipping, or **Expected behavior** if the label looks right. For a bug report, choose **Preview annotated PNG**, then **Download PNG**. The default export includes the selected area and a small border of context.
+3. Choose **Confirmed** if you see clipping, or **Expected behavior** if the label looks right. Choose **Copy GitHub issue report** to copy the expected text, OCR reading, comparison and your decision. Paste it into your issue. To attach the screenshot evidence, choose **Preview annotated PNG**, then **Download PNG**. The default export includes the selected area and a small border of context.
 
 You can review up to six PNGs per session. Each PNG can be up to 12 MiB and 6 megapixels, with a maximum of 8,192 pixels on either side. The optional **Scan full image** action looks for trailing ellipses. It can miss labels whose letters are cut off without an ellipsis.
 

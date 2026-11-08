@@ -34,6 +34,16 @@
   flex: none;
   accent-color: #1b4435;
 }
+.report-fallback {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.report-fallback textarea {
+  min-width: 0;
+  width: 100%;
+  resize: vertical;
+}
 .review-export .export-preview img {
   display: block;
   max-width: 100%;
